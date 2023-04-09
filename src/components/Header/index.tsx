@@ -11,7 +11,7 @@ function Header() {
               Tarefas <span>+</span>
             </h1>
           </Link>
-          <Link href="/dashborad" className={styles.link}>
+          <Link href="/dashboard" className={styles.link}>
             Meu painel
           </Link>
         </nav>
