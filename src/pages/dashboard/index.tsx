@@ -9,7 +9,16 @@ import Textarea from '@/src/components/Textarea'
 import { FiShare2 } from 'react-icons/fi'
 import { FaTrash } from 'react-icons/fa'
 
-export default function Dashboard() {
+import { db } from '../../services/firebaseConnection'
+import { addDoc, collection } from 'firebase/firestore'
+
+interface HomeProps {
+  user: {
+    email: string
+  }
+}
+
+export default function Dashboard({ user }: HomeProps) {
   const [input, setInput] = useState('')
   const [publicTask, setPublicTask] = useState(false)
 
@@ -21,12 +30,25 @@ export default function Dashboard() {
     setInput(e.target.value)
   }
 
-  function handleRegisterTask(e: FormEvent<HTMLFormElement>) {
+  async function handleRegisterTask(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
 
     if (input === '') return
 
-    alert('Teste')
+    try {
+      // Após criar uma coleção, nossa primeira conexão é com o nosso banco de dados no Firebase e depois colocamos o nome dessa coleção
+      await addDoc(collection(db, 'tarefas'), {
+        tarefa: input,
+        created: new Date(),
+        user: user?.email,
+        public: publicTask
+      })
+
+      setInput('')
+      setPublicTask(false)
+    } catch (error) {
+      console.log(error)
+    }
   }
 
   return (
@@ -95,6 +117,10 @@ export const getServerSideProps: GetServerSideProps = async ({ req }) => {
     }
   }
   return {
-    props: {}
+    props: {
+      user: {
+        email: session?.user?.email
+      }
+    }
   }
 }
