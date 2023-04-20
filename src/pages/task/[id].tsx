@@ -2,8 +2,18 @@ import Head from 'next/head'
 import styles from './styles.module.css'
 import { GetServerSideProps } from 'next'
 
+import { ChangeEvent, FormEvent, useState } from 'react'
+import { useSession } from 'next-auth/react'
+
 import { db } from '../../services/firebaseConnection'
-import { doc, collection, query, where, getDoc } from 'firebase/firestore'
+import {
+  doc,
+  collection,
+  query,
+  where,
+  getDoc,
+  addDoc
+} from 'firebase/firestore'
 import Textarea from '@/src/components/Textarea'
 
 interface TaskProps {
@@ -17,6 +27,31 @@ interface TaskProps {
 }
 
 export default function Task({ item }: TaskProps) {
+  const { data: session } = useSession()
+
+  const [input, setInput] = useState('')
+
+  async function handleComent(e: FormEvent) {
+    e.preventDefault()
+
+    if (input === '') return
+
+    if (!session?.user?.email || !session?.user?.name) return
+
+    try {
+      const docRef = await addDoc(collection(db, 'comments'), {
+        comment: input,
+        created: new Date(),
+        user: session?.user?.email,
+        name: session?.user?.name,
+        taskId: item?.taskId
+      })
+
+      setInput('')
+    } catch (error) {
+      console.log(error)
+    }
+  }
   return (
     <div className={styles.container}>
       <Head>
@@ -32,9 +67,17 @@ export default function Task({ item }: TaskProps) {
 
       <section className={styles.comentsContainer}>
         <h2>Fazer comentário</h2>
-        <form>
-          <Textarea placeholder="Digite o seu comentário..." />
-          <button className={styles.button}>Enviar comentário</button>
+        <form onSubmit={handleComent}>
+          <Textarea
+            placeholder="Digite o seu comentário..."
+            value={input}
+            onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
+              setInput(e.target.value)
+            }
+          />
+          <button className={styles.button} disabled={!session?.user}>
+            Enviar comentário
+          </button>
         </form>
       </section>
     </div>
